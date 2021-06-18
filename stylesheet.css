@@ -1,0 +1,12 @@
+h1 {
+    text-align: center;
+}
+.gameboard {
+    text-align: center;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    height: 500px;
+}
+.grid-item {
+    outline: auto;
+}
