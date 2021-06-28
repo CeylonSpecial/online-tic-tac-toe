@@ -7,6 +7,24 @@
 </head>
 <body>
     <h1>Tic-Tac-Toe</h1><br>
+    <div class='welcome-popup'>
+        <p class='welcome-message'>Welcome to Online Tic-Tac-Toe! Please enter your name.</p>
+        <label class='input-labels'>Player One:</label>
+        <input class='input' id=player-one-input required><br>
+        
+        <p class='welcome-message'>Please select one of the following:</p>
+        <label class='input-labels'>Play with a friend</label>
+        <input class='input' type="radio" id="player-two" name="choose"><br>
+        
+        <div class='player-two-input'>
+            <label class='input-labels'>Player Two:</label>
+            <input class='input' id='player-two-input' required><br>
+        </div>
+        
+        <label class='input-labels'>Play with computer</label>
+        <input class="input" type="radio" id="computer" name="choose"><br><br>
+        <button class='start-btn'>Ready!</button><br><br>
+    </div>
     <div class='messages'></div>
     <div class='gameboard'></div>
     <script type="text/javascript" src="script.js"></script>

@@ -1,3 +1,26 @@
+const eventController = (() => {
+    const startBtn = document.querySelector('.start-btn');
+    const playerTwoSelect = document.querySelector('#player-two');
+    const computerSelect = document.querySelector('#computer');
+    const playerOneInput = document.querySelector('#player-one-input');
+    const playerTwoInput = document.querySelector('#player-two-input');
+    const boxes = document.querySelectorAll('.grid-item');
+
+    startBtn.addEventListener('click', () => {
+        names = [playerOneInput.value, playerTwoInput.value];
+        playerController.createPlayer(names, playerTwoSelect, computerSelect);
+        playerController.assignSymbol();
+        playerController.startingPlayer();
+        displayController.turnMessage(playerController.whoseTurn());
+    })
+
+    boxes.forEach(box => {
+        box.addEventListener('click', () => {
+            console.log('hi!');
+        })
+    })
+})();
+
 const gameBoard = (() => {
     let moves = [];
     
@@ -17,30 +40,96 @@ const gameBoard = (() => {
 
 const Player = (name) => {
     let score = 0;
-    let symbol = '';
-    
-    function changeSymbol(choice) {
-        symbol = choice;
-    }
+    let playerSymbol = '';
+    let yourTurn = false;
 
     function clearScore() {
         score = 0;
     }
 
     return { 
-        name, 
-        changeSymbol, 
+        name,
+        yourTurn, 
+        playerSymbol, 
         clearScore, 
     }
 }
 
+const playerController = (() => {
+    const players = [];
+
+    function createPlayer(names, soloPlay, partnerPlay) {
+        names.forEach(function(name) {
+            if (name != '') {
+                const player = Player(`${name}`);
+                addToPlayers(player);
+            }
+        })
+        console.log(players);
+    }
+
+    function assignSymbol() {
+        const symbols = ['X', 'O'];
+
+        players.forEach(function(player) {
+            const symbol = Math.floor(Math.random() * symbols.length);
+            player.playerSymbol = symbols[symbol];
+            symbols.splice(symbol, 1);
+            console.log(symbols);
+        })
+        console.log(players);
+    }
+
+    function addToPlayers(player) {
+        players.push(player);
+    }
+
+    function startingPlayer() {
+        const firstPlayer = Math.floor(Math.random() * players.length);
+        players[firstPlayer].yourTurn = true;
+        console.log(players[firstPlayer].yourTurn);
+    }
+
+    function whoseTurn() {
+        const player = players.filter(player => player.yourTurn === true);
+        return player[0];
+    }
+
+    function changeTurn() {
+        players.forEach(function(player) {
+            player.yourTurn = !player.yourTurn;
+        })
+    }
+
+    return {
+        createPlayer,
+        assignSymbol,
+        startingPlayer,
+        whoseTurn,
+        changeTurn,
+    }
+    
+})();
+
 const gameLogic = (() => {
+    const spaces = document.querySelectorAll('.grid-item');
+
+    spaces.forEach(space => {
+        space.addEventListener('click', () => {
+
+            gameBoard.addMove();
+        })
+    })
+
 
 })();
 
 const displayController = (() => {
     const gameboard = document.querySelector('.gameboard');
-    const messageDiv = document.querySelector('.messsages');
+    const messageDiv = document.querySelector('.messages');
+
+    //function welcomePopup() {
+    //}
 
     function createBoard() {
         for (i = 1;i <= 9; i++) {
@@ -66,10 +155,6 @@ const displayController = (() => {
         messageDiv.textContent = `${player.name}'s turn!`
     }
 
-    function welcomeMessage() {
-        messageDiv.textContent = "Welcome to Online Tic-Tac-Toe!"
-    }
-
     function winMessage(player) {
         messageDiv.textContent = `${player.name} wins!`;
     }
@@ -83,7 +168,6 @@ const displayController = (() => {
         addToBoard, 
         clearBoard,
         turnMessage,
-        welcomeMessage,
         winMessage,
         tieMessage
     };
