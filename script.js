@@ -1,22 +1,23 @@
 const eventController = (() => {
     const startBtn = document.querySelector('.start-btn');
-    const playerTwoSelect = document.querySelector('#player-two');
-    const computerSelect = document.querySelector('#computer');
-    const playerOneInput = document.querySelector('#player-one-input');
-    const playerTwoInput = document.querySelector('#player-two-input');
-    const boxes = document.querySelectorAll('.grid-item');
+    const spaces = document.querySelectorAll('.grid-item');
 
     startBtn.addEventListener('click', () => {
-        names = [playerOneInput.value, playerTwoInput.value];
-        playerController.createPlayer(names, playerTwoSelect, computerSelect);
+        const names = [displayController.playerOneInput.value, displayController.playerTwoInput.value];
+        
+        playerController.createPlayer(names, displayController.playerTwoSelect, displayController.computerSelect);
         playerController.assignSymbol();
         playerController.startingPlayer();
         displayController.turnMessage(playerController.whoseTurn());
     })
 
-    boxes.forEach(box => {
-        box.addEventListener('click', () => {
-            console.log('hi!');
+    spaces.forEach(space => {
+        space.addEventListener('click', () => {
+            const activePlayer = playerController.whoseTurn();
+            
+            displayController.addToBoard(space, activePlayer);
+            playerController.changeTurn();
+            displayController.turnMessage(playerController.whoseTurn());
         })
     })
 })();
@@ -112,42 +113,29 @@ const playerController = (() => {
 })();
 
 const gameLogic = (() => {
-    const spaces = document.querySelectorAll('.grid-item');
+    function winCheck(spaces) {
 
-    spaces.forEach(space => {
-        space.addEventListener('click', () => {
-
-            gameBoard.addMove();
-        })
-    })
-
-
+    }
 })();
 
 const displayController = (() => {
     const gameboard = document.querySelector('.gameboard');
     const messageDiv = document.querySelector('.messages');
+    const playerTwoSelect = document.querySelector('#player-two');
+    const computerSelect = document.querySelector('#computer');
+    const playerOneInput = document.querySelector('#player-one-input');
+    const playerTwoInput = document.querySelector('#player-two-input');
 
     //function welcomePopup() {
     //}
 
-    function createBoard() {
-        for (i = 1;i <= 9; i++) {
-            const box = document.createElement('div');
-            box.classList.add('grid-item');
-            gameboard.appendChild(box);
-        }
-    }
-
     function addToBoard(selection, player) {
-        selection.textContent = player.symbol;
+        selection.textContent = player.playerSymbol;
     }
 
-    function clearBoard() {
-        const boxes = document.querySelectorAll('.grid-item');
-
-        boxes.forEach(box => {
-            box.textContent = '';
+    function clearBoard(spaces) {
+        spaces.forEach(space => {
+            space.textContent = '';
         })
     }
 
@@ -164,7 +152,8 @@ const displayController = (() => {
     }
 
     return { 
-        createBoard, 
+        playerOneInput,
+        playerTwoInput,
         addToBoard, 
         clearBoard,
         turnMessage,
@@ -172,8 +161,6 @@ const displayController = (() => {
         tieMessage
     };
 })();
-
-displayController.createBoard();
 
 
 
