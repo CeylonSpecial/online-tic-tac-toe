@@ -15,6 +15,7 @@ const eventController = (() => {
         space.addEventListener('click', () => {
             const activePlayer = playerController.whoseTurn();
             
+            gameBoard.addMove(space, )
             displayController.addToBoard(space, activePlayer);
             playerController.changeTurn();
             displayController.turnMessage(playerController.whoseTurn());
@@ -23,7 +24,11 @@ const eventController = (() => {
 })();
 
 const gameBoard = (() => {
-    let moves = [];
+    let moves = [
+        [],
+        [],
+        []
+    ];
     
     function addMove(choice) {
         moves.push(choice);
@@ -113,8 +118,17 @@ const playerController = (() => {
 })();
 
 const gameLogic = (() => {
-    function winCheck(spaces) {
+    function winCheck(markedMidSpaces) {
+            markedMidSpaces.forEach(function(space) {
+            if (space.value === parseInt(space.getAttribute('data'))
+        })
+    }
 
+    function getMarkedMidSpaces(spaces) {
+        const middleSpaces = [2, 4, 5, 6, 8];
+        const markedMidSpaces = spaces.filter(space => space.value != '').filter(
+            middleSpaces.includes(parseInt(space.getAttribute('data'))));
+        return markedMidSpaces;
     }
 })();
 
