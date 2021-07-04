@@ -15,23 +15,26 @@ const eventController = (() => {
         space.addEventListener('click', () => {
             const activePlayer = playerController.whoseTurn();
             
-            gameBoard.addMove(space, )
+            gameBoard.addMove(space.getAttribute('data'), activePlayer.playerSymbol);
             displayController.addToBoard(space, activePlayer);
-            playerController.changeTurn();
-            displayController.turnMessage(playerController.whoseTurn());
+            if (gameLogic.winCheck(spaces)) {
+                displayController.winMessage(playerController.whoseTurn());
+            }
+            else {
+                console.log('else');
+                playerController.changeTurn();
+                displayController.turnMessage(playerController.whoseTurn());
+            }
         })
     })
 })();
 
 const gameBoard = (() => {
-    let moves = [
-        [],
-        [],
-        []
-    ];
+    let moves = [];
     
-    function addMove(choice) {
-        moves.push(choice);
+    function addMove(space, symbol) {
+        moves[space] = symbol;
+        console.log(moves);
     }
 
     function clearMoves() {
@@ -39,6 +42,7 @@ const gameBoard = (() => {
     }
 
     return {
+        moves,
         addMove,
         clearMoves,
     }
@@ -118,17 +122,63 @@ const playerController = (() => {
 })();
 
 const gameLogic = (() => {
-    function winCheck(markedMidSpaces) {
-            markedMidSpaces.forEach(function(space) {
-            if (space.value === parseInt(space.getAttribute('data'))
-        })
+    function winCheck(spaces) {
+        if (rowWin(spaces)) {
+            return true;
+        }
+        else if (colWin(spaces)) {
+            return true;
+        }
+        else if (diagWin(spaces)) {
+            return true;
+        }
     }
 
-    function getMarkedMidSpaces(spaces) {
-        const middleSpaces = [2, 4, 5, 6, 8];
-        const markedMidSpaces = spaces.filter(space => space.value != '').filter(
-            middleSpaces.includes(parseInt(space.getAttribute('data'))));
-        return markedMidSpaces;
+    function rowWin(spacesArr) {
+        const rowStart = [0, 3, 6];
+        let win = false;
+
+        rowStart.forEach(function(space) {
+            if (spacesArr[space].textContent != '') {
+                if (spacesArr[space].textContent === spacesArr[space + 1].textContent && spacesArr[space].textContent === spacesArr[space + 2].textContent) {
+                    win = true;
+                }
+            }
+        })
+        return win;
+    }
+
+    function colWin(spacesArr) {
+        const colStart = [0, 1, 2];
+        let win = false;
+
+        colStart.forEach(function(space) {
+            if (spacesArr[space].textContent != '') {
+                if (spacesArr[space].textContent === spacesArr[space + 3].textContent && spacesArr[space].textContent === spacesArr[space + 6].textContent) {
+                    win = true;
+                }
+            }
+        })
+        return win;
+    }
+
+    function diagWin(spacesArr) {
+        const diagMid = 4;
+        let win = false;
+
+        if (spacesArr[diagMid].textContent != '') {
+            if (spacesArr[diagMid].textContent === spacesArr[diagMid - 4].textContent && spacesArr[diagMid].textContent === spacesArr[diagMid + 4].textContent) {
+                win = true;
+            }
+            else if (spacesArr[diagMid].textContent === spacesArr[diagMid - 2].textContent && spacesArr[diagMid].textContent === spacesArr[diagMid + 2].textContent) {
+                win = true;
+            }
+        }
+        return win;
+    }
+
+    return {
+        winCheck
     }
 })();
 
