@@ -2,50 +2,29 @@ const eventController = (() => {
     const startBtn = document.querySelector('.start-btn');
     const spaces = document.querySelectorAll('.grid-item');
 
-    startBtn.addEventListener('click', () => {
+    startBtn.addEventListener('click', (e) => {
         const names = [displayController.playerOneInput.value, displayController.playerTwoInput.value];
         
-        playerController.createPlayer(names, displayController.playerTwoSelect, displayController.computerSelect);
-        playerController.assignSymbol();
-        playerController.startingPlayer();
-        displayController.turnMessage(playerController.whoseTurn());
+        e.preventDefault();
+        playerController.gameStart(names);
+        displayController.gameStart();
     })
 
     spaces.forEach(space => {
         space.addEventListener('click', () => {
             const activePlayer = playerController.whoseTurn();
             
-            gameBoard.addMove(space.getAttribute('data'), activePlayer.playerSymbol);
             displayController.addToBoard(space, activePlayer);
             if (gameLogic.winCheck(spaces)) {
-                displayController.winMessage(playerController.whoseTurn());
-            }
-            else {
-                console.log('else');
-                playerController.changeTurn();
-                displayController.turnMessage(playerController.whoseTurn());
+                displayController.winMessage(activePlayer);
+            } else if (gameLogic.tieCheck(spaces)) {
+                displayController.tieMessage();
+            } else {
+                const nextPlayer = playerController.changeTurn();
+                displayController.turnMessage(nextPlayer);
             }
         })
     })
-})();
-
-const gameBoard = (() => {
-    let moves = [];
-    
-    function addMove(space, symbol) {
-        moves[space] = symbol;
-        console.log(moves);
-    }
-
-    function clearMoves() {
-        moves = [];
-    }
-
-    return {
-        moves,
-        addMove,
-        clearMoves,
-    }
 })();
 
 const Player = (name) => {
@@ -68,7 +47,7 @@ const Player = (name) => {
 const playerController = (() => {
     const players = [];
 
-    function createPlayer(names, soloPlay, partnerPlay) {
+    function createPlayer(names) {
         names.forEach(function(name) {
             if (name != '') {
                 const player = Player(`${name}`);
@@ -85,9 +64,7 @@ const playerController = (() => {
             const symbol = Math.floor(Math.random() * symbols.length);
             player.playerSymbol = symbols[symbol];
             symbols.splice(symbol, 1);
-            console.log(symbols);
         })
-        console.log(players);
     }
 
     function addToPlayers(player) {
@@ -97,18 +74,24 @@ const playerController = (() => {
     function startingPlayer() {
         const firstPlayer = Math.floor(Math.random() * players.length);
         players[firstPlayer].yourTurn = true;
-        console.log(players[firstPlayer].yourTurn);
     }
 
     function whoseTurn() {
-        const player = players.filter(player => player.yourTurn === true);
-        return player[0];
+        const player = players.find(player => player.yourTurn === true);
+        return player;
     }
 
     function changeTurn() {
         players.forEach(function(player) {
             player.yourTurn = !player.yourTurn;
         })
+        return whoseTurn();
+    }
+
+    function gameStart(names) {
+        createPlayer(names);
+        assignSymbol();
+        startingPlayer();
     }
 
     return {
@@ -117,68 +100,66 @@ const playerController = (() => {
         startingPlayer,
         whoseTurn,
         changeTurn,
+        gameStart,
     }
     
 })();
 
 const gameLogic = (() => {
     function winCheck(spaces) {
-        if (rowWin(spaces)) {
-            return true;
-        }
-        else if (colWin(spaces)) {
-            return true;
-        }
-        else if (diagWin(spaces)) {
+        if (rowWin(spaces) || colWin(spaces) || diagWin(spaces)) {
             return true;
         }
     }
 
     function rowWin(spacesArr) {
         const rowStart = [0, 3, 6];
-        let win = false;
 
-        rowStart.forEach(function(space) {
+        for (const space of rowStart) {
             if (spacesArr[space].textContent != '') {
-                if (spacesArr[space].textContent === spacesArr[space + 1].textContent && spacesArr[space].textContent === spacesArr[space + 2].textContent) {
-                    win = true;
+                if (spacesArr[space].textContent === spacesArr[space + 1].textContent && 
+                    spacesArr[space].textContent === spacesArr[space + 2].textContent) {
+                    return true;
                 }
             }
-        })
-        return win;
+        }
     }
 
     function colWin(spacesArr) {
         const colStart = [0, 1, 2];
-        let win = false;
 
-        colStart.forEach(function(space) {
+        for (const space of colStart) {
             if (spacesArr[space].textContent != '') {
-                if (spacesArr[space].textContent === spacesArr[space + 3].textContent && spacesArr[space].textContent === spacesArr[space + 6].textContent) {
-                    win = true;
+                if (spacesArr[space].textContent === spacesArr[space + 3].textContent && 
+                    spacesArr[space].textContent === spacesArr[space + 6].textContent) {
+                    return true;
                 }
             }
-        })
-        return win;
+        }
     }
 
     function diagWin(spacesArr) {
         const diagMid = 4;
-        let win = false;
 
         if (spacesArr[diagMid].textContent != '') {
-            if (spacesArr[diagMid].textContent === spacesArr[diagMid - 4].textContent && spacesArr[diagMid].textContent === spacesArr[diagMid + 4].textContent) {
-                win = true;
-            }
-            else if (spacesArr[diagMid].textContent === spacesArr[diagMid - 2].textContent && spacesArr[diagMid].textContent === spacesArr[diagMid + 2].textContent) {
-                win = true;
+            if (spacesArr[diagMid].textContent === spacesArr[diagMid - 4].textContent && 
+                spacesArr[diagMid].textContent === spacesArr[diagMid + 4].textContent) {
+                return true;
+            } else if (spacesArr[diagMid].textContent === spacesArr[diagMid - 2].textContent && 
+                spacesArr[diagMid].textContent === spacesArr[diagMid + 2].textContent) {
+                return true;
             }
         }
-        return win;
+    }
+
+    function tieCheck(spaces) {
+        const spacesArr = Array.from(spaces);
+        return spacesArr.every(space => space.textContent != '');
     }
 
     return {
-        winCheck
+        winCheck,
+        tieCheck
     }
 })();
 
@@ -189,9 +170,21 @@ const displayController = (() => {
     const computerSelect = document.querySelector('#computer');
     const playerOneInput = document.querySelector('#player-one-input');
     const playerTwoInput = document.querySelector('#player-two-input');
+    const welcomePopup = document.querySelector('.welcome-popup');
 
-    //function welcomePopup() {
-    //}
+    function openPopup(popup) {
+        popup.style.visibility = 'visible';
+    }
+
+    function closePopup(popup) {
+        popup.style.visibility = 'hidden';
+    }
+
+    function gameStart() {
+        welcomePopup.reset();
+        closePopup(welcomePopup);
+        turnMessage(playerController.whoseTurn());
+    }
 
     function addToBoard(selection, player) {
         selection.textContent = player.playerSymbol;
@@ -212,12 +205,18 @@ const displayController = (() => {
     }
 
     function tieMessage() {
-        messageDiv.textContent = "It's a tie!";
+        messageDiv.textContent = "Cat's Game!";
     }
+
+    openPopup(welcomePopup);
 
     return { 
         playerOneInput,
         playerTwoInput,
+        welcomePopup,
+        openPopup,
+        closePopup,
+        gameStart,
         addToBoard, 
         clearBoard,
         turnMessage,

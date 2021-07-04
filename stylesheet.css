@@ -1,6 +1,16 @@
 h1 {
     text-align: center;
 }
+.welcome-popup {
+    visibility: hidden;
+    width: 400px;
+    background-color: white;
+    z-index: 1;
+    position: absolute;
+    transform: translate(0, 80%);
+    border-radius: 2px;
+    box-shadow: 0px 0px 10px;
+}
 .gameboard {
     text-align: center;
     display: grid;
