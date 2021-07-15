@@ -1,5 +1,4 @@
 const eventController = (() => {
-    const startBtn = document.querySelector('.start-btn');
     const spaces = document.querySelectorAll('.grid-item');
     const playAgainBtn = document.querySelector('#play-again');
     const changePlayersBtn = document.querySelector('#change-players');
@@ -7,6 +6,7 @@ const eventController = (() => {
     const selectComputer = document.querySelector('#computer');
     const playerOneInput = document.querySelector('#player-one-input');
     const playerTwoInput = document.querySelector('#player-two-input');
+    const welcomeForm = document.querySelector('.welcome-popup');
 
     window.addEventListener('load', () => {
         const playerTwoSelected = selectPlayerTwo.checked;
@@ -24,11 +24,11 @@ const eventController = (() => {
         displayController.hidePlayerTwoInput();
     })
 
-    startBtn.addEventListener('click', (e) => {
+    welcomeForm.addEventListener('submit', (e) => {
         const names = displayController.sanitizeInput(playerOneInput.value, playerTwoInput.value);
         
         e.preventDefault();
-        playerController.gameStart(names);
+        playerController.gameStart(selectComputer, names);
         displayController.gameStart(spaces);
     })
 
@@ -61,15 +61,20 @@ const Player = (name) => {
     }
 }
 
+//const computer = (() => {
+
+//})
+
 const playerController = (() => {
     const players = [];
 
-    function _createPlayer(names) {
+    function _createPlayer(selection, names) {
+        if (_computerSelected(selection)) {
+            names[1] = 'Computer';
+        }
         names.forEach(function(name) {
-            if (name != '') {
-                const player = Player(`${name}`);
-                _addToPlayers(player);
-            }
+            const player = Player(`${name}`);
+            _addToPlayers(player);
         })
         console.log(players);
     }
@@ -111,8 +116,8 @@ const playerController = (() => {
         })
     }
 
-    function gameStart(names) {
-        _createPlayer(names);
+    function gameStart(selection, names) {
+        _createPlayer(selection, names);
         _assignSymbol();
         _startingPlayer();
     }
@@ -124,6 +129,10 @@ const playerController = (() => {
     function playAgain() {
         _resetTurnStatus();
         _startingPlayer();
+    }
+
+    function _computerSelected(selection) {
+        return selection.checked;
     }
 
     return {
@@ -190,7 +199,7 @@ const gameLogic = (() => {
 
     function gameFlow(space, spaces) {
         const activePlayer = playerController.whoseTurn();
-        const spaceIsEmpty = checkSpace(space);
+        const spaceIsEmpty = _checkSpace(space);
         
         if (spaceIsEmpty) {
             displayController.addToBoard(space, activePlayer);
@@ -208,13 +217,12 @@ const gameLogic = (() => {
         }
     }
 
-    function checkSpace(space) {
+    function _checkSpace(space) {
         return space.textContent === '';
     }
 
     return {
-        gameFlow,
-        checkSpace
+        gameFlow
     }
 })();
 
@@ -223,6 +231,7 @@ const displayController = (() => {
     const titleDiv = document.querySelector('h1');
     const messageDiv = document.querySelector('.messages');
     const playerTwoDiv = document.querySelector('.player-two-input');
+    const playerTwoInput = document.querySelector('#player-two-input');
     const welcomeDiv = document.querySelector('.welcome-popup');
     const gameEndDiv = document.querySelector('.game-end-popup');
 
@@ -302,10 +311,20 @@ const displayController = (() => {
 
     function showPlayerTwoInput() {
         playerTwoDiv.style.display = 'block';
+        _requirePlayerTwo();
     }
 
     function hidePlayerTwoInput() {
         playerTwoDiv.style.display = 'none';
+        _undoRequirePlayerTwo();
+    }
+
+    function _requirePlayerTwo() {
+        playerTwoInput.required = true;
+    }
+
+    function _undoRequirePlayerTwo() {
+        playerTwoInput.required = false;
     }
 
     function sanitizeInput(...input) {
