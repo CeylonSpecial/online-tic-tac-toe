@@ -1,8 +1,8 @@
 const eventController = (() => {
     const startBtn = document.querySelector('.start-btn');
     const spaces = document.querySelectorAll('.grid-item');
-    const playAgainBtn = document.querySelector('.play-again');
-    const changePlayersBtn = document.querySelector('.change-players');
+    const playAgainBtn = document.querySelector('#play-again');
+    const changePlayersBtn = document.querySelector('#change-players');
     const selectPlayerTwo = document.querySelector('#player-two');
     const selectComputer = document.querySelector('#computer');
     const playerOneInput = document.querySelector('#player-one-input');
@@ -25,7 +25,7 @@ const eventController = (() => {
     })
 
     startBtn.addEventListener('click', (e) => {
-        const names = [playerOneInput.value, playerTwoInput.value];
+        const names = displayController.sanitizeInput(playerOneInput.value, playerTwoInput.value);
         
         e.preventDefault();
         playerController.gameStart(names);
@@ -212,6 +212,7 @@ const gameLogic = (() => {
 
 const displayController = (() => {
     const gameboard = document.querySelector('.gameboard');
+    const titleDiv = document.querySelector('h1');
     const messageDiv = document.querySelector('.messages');
     const playerTwoDiv = document.querySelector('.player-two-input');
     const welcomeDiv = document.querySelector('.welcome-popup');
@@ -282,10 +283,12 @@ const displayController = (() => {
     }
 
     function _makeUnclickable() {
+        titleDiv.classList.add('popup-open');
         gameboard.classList.add('popup-open');
     }
 
     function _makeClickable() {
+        titleDiv.classList.remove('popup-open');
         gameboard.classList.remove('popup-open');
     }
 
@@ -297,6 +300,16 @@ const displayController = (() => {
         playerTwoDiv.style.display = 'none';
     }
 
+    function sanitizeInput(...input) {
+        const sanitized = [];
+        
+        input.forEach(function(item) {
+            item = item.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            sanitized.push(item);
+        })
+        return sanitized;
+    }
+
     _openPopup(welcomeDiv);
 
     return {
@@ -306,7 +319,8 @@ const displayController = (() => {
         gameEndPopup,
         resetGame,
         showPlayerTwoInput,
-        hidePlayerTwoInput
+        hidePlayerTwoInput,
+        sanitizeInput
     };
 })();
 

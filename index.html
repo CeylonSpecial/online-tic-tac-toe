@@ -3,10 +3,13 @@
 <head>
     <title>Tic-Tac-Toe</title>
     <link href='stylesheet.css' rel='stylesheet'>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Yomogi&family=Zen+Tokyo+Zoo&display=swap" rel="stylesheet"> 
     <meta charset="UTF-8"/>
 </head>
 <body>
-    <h1>Tic-Tac-Toe</h1><br>
+    <h1>Tic-Tac-Toe</h1>
     <div class='all-popups'>
         <form class='welcome-popup'>
             <p class='welcome-message'>Welcome to Online Tic-Tac-Toe! Please enter your name.</p>
@@ -28,8 +31,10 @@
         </form>
         <div class='game-end-popup'>
             <p class='win-or-tie'></p>
-            <button class='play-again'>Play Again!</button>
-            <button class='change-players'>Change Players</button>
+            <div class='popup-buttons'>
+                <button id='play-again'>Play Again!</button>
+                <button id='change-players'>Change Players</button>
+            </div>
         </div>
     </div>
     <div class='messages'></div>
