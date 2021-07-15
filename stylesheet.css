@@ -1,7 +1,28 @@
-h1 {
+body {
+    display: grid;
+    align-items: center;
+    justify-items: center;
+}
+
+.all-popups {
+    display: grid;
+    align-items: center;
+    justify-items: center;
+}
+
+.welcome-popup {
+    visibility: hidden;
+    width: 400px;
+    background-color: white;
+    z-index: 1;
+    position: absolute;
+    transform: translate(0, 80%);
+    border-radius: 2px;
+    box-shadow: 0px 0px 10px;
     text-align: center;
 }
-.welcome-popup {
+
+.game-end-popup {
     visibility: hidden;
     width: 400px;
     background-color: white;
@@ -15,8 +36,20 @@ h1 {
     text-align: center;
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    height: 500px;
+    height: 600px;
+    width: 600px;
+    outline: 4px solid black;
 }
+
+.player-two-input {
+    display: none;
+}
+
 .grid-item {
-    outline: auto;
+    outline: 2px solid black;
+}
+
+.popup-open {
+    pointer-events: none;
+    opacity: 0.5;
 }
