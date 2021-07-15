@@ -4,11 +4,14 @@ const eventController = (() => {
     const playAgainBtn = document.querySelector('.play-again');
     const changePlayersBtn = document.querySelector('.change-players');
     const selectPlayerTwo = document.querySelector('#player-two');
-    const playerTwoInput = document.querySelector('.player-two-input');
     const selectComputer = document.querySelector('#computer');
+    const playerOneInput = document.querySelector('#player-one-input');
+    const playerTwoInput = document.querySelector('#player-two-input');
 
     window.addEventListener('load', () => {
-        if (selectPlayerTwo.checked) {
+        const playerTwoSelected = selectPlayerTwo.checked;
+        
+        if (playerTwoSelected) {
             displayController.showPlayerTwoInput();
         }
     })
@@ -22,13 +25,11 @@ const eventController = (() => {
     })
 
     startBtn.addEventListener('click', (e) => {
-        const names = [displayController.playerOneInput.value, displayController.playerTwoInput.value];
+        const names = [playerOneInput.value, playerTwoInput.value];
         
         e.preventDefault();
         playerController.gameStart(names);
         displayController.gameStart(spaces);
-        displayController.welcomeDiv.reset();
-        playerTwoInput.style.display = 'none';
     })
 
     spaces.forEach(space => {
@@ -36,22 +37,12 @@ const eventController = (() => {
             const activePlayer = playerController.whoseTurn();
             
             displayController.addToBoard(space, activePlayer);
-            const win = gameLogic.winCheck(spaces);
-            const tie = gameLogic.tieCheck(spaces);
-            if (win) {
-                displayController.gameEndPopup(win, activePlayer);
-            } else if (tie) {
-                displayController.gameEndPopup(win);
-            } else {
-                const nextPlayer = playerController.changeTurn();
-                displayController.turnMessage(nextPlayer);
-            }
+            gameLogic.gameFlow(spaces, activePlayer);
         })
     })
 
     playAgainBtn.addEventListener('click', () => {
-        playerController.resetTurnStatus();
-        playerController.startingPlayer();
+        playerController.playAgain();
         displayController.gameStart(spaces);
     })
 
@@ -63,36 +54,30 @@ const eventController = (() => {
 })();
 
 const Player = (name) => {
-    let score = 0;
     let playerSymbol = '';
     let yourTurn = false;
-
-    function clearScore() {
-        score = 0;
-    }
 
     return { 
         name,
         yourTurn, 
-        playerSymbol, 
-        clearScore, 
+        playerSymbol,
     }
 }
 
 const playerController = (() => {
     const players = [];
 
-    function createPlayer(names) {
+    function _createPlayer(names) {
         names.forEach(function(name) {
             if (name != '') {
                 const player = Player(`${name}`);
-                addToPlayers(player);
+                _addToPlayers(player);
             }
         })
         console.log(players);
     }
 
-    function assignSymbol() {
+    function _assignSymbol() {
         const symbols = ['X', 'O'];
 
         players.forEach(function(player) {
@@ -102,11 +87,11 @@ const playerController = (() => {
         })
     }
 
-    function addToPlayers(player) {
+    function _addToPlayers(player) {
         players.push(player);
     }
 
-    function startingPlayer() {
+    function _startingPlayer() {
         const firstPlayer = Math.floor(Math.random() * players.length);
         players[firstPlayer].yourTurn = true;
     }
@@ -123,47 +108,45 @@ const playerController = (() => {
         return whoseTurn();
     }
 
-    function resetTurnStatus() {
+    function _resetTurnStatus() {
         players.forEach(function(player) {
             player.yourTurn = false;
         })
     }
 
     function gameStart(names) {
-        createPlayer(names);
-        assignSymbol();
-        startingPlayer();
+        _createPlayer(names);
+        _assignSymbol();
+        _startingPlayer();
     }
 
     function removePlayers() {
         players.length = 0;
     }
 
-    //function resetGame() {
-
-    //}
+    function playAgain() {
+        _resetTurnStatus();
+        _startingPlayer();
+    }
 
     return {
-        createPlayer,
-        assignSymbol,
-        startingPlayer,
         whoseTurn,
         changeTurn,
         gameStart,
-        resetTurnStatus,
-        removePlayers
+        removePlayers,
+        playAgain
     }
     
 })();
 
 const gameLogic = (() => {
-    function winCheck(spaces) {
-        if (rowWin(spaces) || colWin(spaces) || diagWin(spaces)) {
+    function _winCheck(spaces) {
+        if (_rowWin(spaces) || _colWin(spaces) || _diagWin(spaces)) {
             return true;
         }
     }
 
-    function rowWin(spacesArr) {
+    function _rowWin(spacesArr) {
         const rowStart = [0, 3, 6];
 
         for (const space of rowStart) {
@@ -176,7 +159,7 @@ const gameLogic = (() => {
         }
     }
 
-    function colWin(spacesArr) {
+    function _colWin(spacesArr) {
         const colStart = [0, 1, 2];
 
         for (const space of colStart) {
@@ -189,7 +172,7 @@ const gameLogic = (() => {
         }
     }
 
-    function diagWin(spacesArr) {
+    function _diagWin(spacesArr) {
         const diagMid = 4;
 
         if (spacesArr[diagMid].textContent != '') {
@@ -203,56 +186,68 @@ const gameLogic = (() => {
         }
     }
 
-    function tieCheck(spaces) {
+    function _tieCheck(spaces) {
         const spacesArr = Array.from(spaces);
         return spacesArr.every(space => space.textContent != '');
     }
 
+    function gameFlow(spaces, activePlayer) {
+        const win = _winCheck(spaces);
+        const tie = _tieCheck(spaces);
+        
+        if (win) {
+            displayController.gameEndPopup(win, activePlayer);
+        } else if (tie) {
+            displayController.gameEndPopup(win);
+        } else {
+            const nextPlayer = playerController.changeTurn();
+            displayController.turnMessage(nextPlayer);
+        }
+    }
+
     return {
-        winCheck,
-        tieCheck
+        gameFlow
     }
 })();
 
 const displayController = (() => {
     const gameboard = document.querySelector('.gameboard');
     const messageDiv = document.querySelector('.messages');
-    const playerTwoSelect = document.querySelector('#player-two');
-    const computerSelect = document.querySelector('#computer');
-    const playerOneInput = document.querySelector('#player-one-input');
-    const playerTwoInput = document.querySelector('#player-two-input');
+    const playerTwoDiv = document.querySelector('.player-two-input');
     const welcomeDiv = document.querySelector('.welcome-popup');
     const gameEndDiv = document.querySelector('.game-end-popup');
 
-    function openPopup(popup) {
+    function _openPopup(popup) {
         popup.style.visibility = 'visible';
-        makeUnclickable();
+        _makeUnclickable();
     }
 
-    function closePopup(popup) {
+    function _closePopup(popup) {
         popup.style.visibility = 'hidden';
-        makeClickable();
+        _makeClickable();
     }
 
-    function findOpenPopup() {
+    function _findOpenPopup() {
         const popupArr = [welcomeDiv, gameEndDiv];
         const popup = popupArr.find(popup => popup.style.visibility === 'visible');
         return popup;
     }
 
     function gameStart(spaces) {
-        const popup = findOpenPopup();
+        const popup = _findOpenPopup();
         
-        closePopup(popup);
-        clearBoard(spaces);
+        _closePopup(popup);
+        _clearBoard(spaces);
         turnMessage(playerController.whoseTurn());
+        welcomeDiv.reset();
+        hidePlayerTwoInput();
     }
 
     function addToBoard(selection, player) {
         selection.textContent = player.playerSymbol;
     }
 
-    function clearBoard(spaces) {
+    function _clearBoard(spaces) {
         spaces.forEach(space => {
             space.textContent = '';
         })
@@ -262,60 +257,53 @@ const displayController = (() => {
         messageDiv.textContent = `${player.name}'s turn!`
     }
 
-    function clearMessage() {
+    function _clearMessage() {
         messageDiv.textContent = '';
     }
 
     function gameEndPopup(win, player) {
         const message = document.querySelector('.win-or-tie')
 
-        clearMessage();
+        _clearMessage();
         
         if (win) {
             message.textContent = `${player.name} wins!`;
         } else {
             message.textContent = "Cat's Game!"
         }
-        openPopup(gameEndDiv);
+        _openPopup(gameEndDiv);
     }
 
     function resetGame(spaces) {
-        clearBoard(spaces);
-        clearMessage();
-        closePopup(findOpenPopup());
-        openPopup(welcomeDiv);
+        _clearBoard(spaces);
+        _clearMessage();
+        _closePopup(_findOpenPopup());
+        _openPopup(welcomeDiv);
     }
 
-    function makeUnclickable() {
+    function _makeUnclickable() {
         gameboard.classList.add('popup-open');
     }
 
-    function makeClickable() {
+    function _makeClickable() {
         gameboard.classList.remove('popup-open');
     }
 
     function showPlayerTwoInput() {
-        playerTwoInput.style.display = 'block';
+        playerTwoDiv.style.display = 'block';
     }
 
     function hidePlayerTwoInput() {
-        playerTwoInput.style.display = 'none';
+        playerTwoDiv.style.display = 'none';
     }
 
-    openPopup(welcomeDiv);
+    _openPopup(welcomeDiv);
 
-    return { 
-        playerOneInput,
-        playerTwoInput,
-        welcomeDiv,
-        openPopup,
-        closePopup,
+    return {
         gameStart,
-        addToBoard, 
-        clearBoard,
+        addToBoard,
         turnMessage,
         gameEndPopup,
-        clearMessage,
         resetGame,
         showPlayerTwoInput,
         hidePlayerTwoInput
