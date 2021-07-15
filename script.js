@@ -34,10 +34,7 @@ const eventController = (() => {
 
     spaces.forEach(space => {
         space.addEventListener('click', () => {
-            const activePlayer = playerController.whoseTurn();
-            
-            displayController.addToBoard(space, activePlayer);
-            gameLogic.gameFlow(spaces, activePlayer);
+            gameLogic.gameFlow(space, spaces);
         })
     })
 
@@ -191,22 +188,33 @@ const gameLogic = (() => {
         return spacesArr.every(space => space.textContent != '');
     }
 
-    function gameFlow(spaces, activePlayer) {
-        const win = _winCheck(spaces);
-        const tie = _tieCheck(spaces);
+    function gameFlow(space, spaces) {
+        const activePlayer = playerController.whoseTurn();
+        const spaceIsEmpty = checkSpace(space);
         
-        if (win) {
-            displayController.gameEndPopup(win, activePlayer);
-        } else if (tie) {
-            displayController.gameEndPopup(win);
-        } else {
-            const nextPlayer = playerController.changeTurn();
-            displayController.turnMessage(nextPlayer);
+        if (spaceIsEmpty) {
+            displayController.addToBoard(space, activePlayer);
+            const win = _winCheck(spaces);
+            const tie = _tieCheck(spaces);
+            
+            if (win) {
+                displayController.gameEndPopup(win, activePlayer);
+            } else if (tie) {
+                displayController.gameEndPopup(win);
+            } else {
+                const nextPlayer = playerController.changeTurn();
+                displayController.turnMessage(nextPlayer);
+            }
         }
     }
 
+    function checkSpace(space) {
+        return space.textContent === '';
+    }
+
     return {
-        gameFlow
+        gameFlow,
+        checkSpace
     }
 })();
 
