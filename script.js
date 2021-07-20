@@ -30,6 +30,7 @@ const eventController = (() => {
         e.preventDefault();
         playerController.gameStart(selectComputer, names);
         displayController.gameStart(spaces);
+        computer.gameStart();
     })
 
     spaces.forEach(space => {
@@ -41,35 +42,265 @@ const eventController = (() => {
     playAgainBtn.addEventListener('click', () => {
         playerController.playAgain();
         displayController.gameStart(spaces);
+        gameLogic.resetMoveCounter();
     })
 
     changePlayersBtn.addEventListener('click', () => {
         playerController.removePlayers();
         displayController.resetGame(spaces);
-
+        gameLogic.resetMoveCounter();
     })
 })();
 
+const gameboard = (() => {
+
+    const spaces = [
+        [[1, 2], [3, 6], [4, 8]],
+        [[0, 2], [4, 7]],
+        [[0, 1], [4, 6], [5, 8]],
+        [[4, 5], [0, 6]],
+        [[3, 5], [1, 7], [0, 8], [2, 6]],
+        [[3, 4], [2, 8]],
+        [[7, 8], [0, 3], [2, 4]],
+        [[6, 8], [1, 4]],
+        [[0, 4], [6, 7], [2, 5]]
+    ]
+    return {
+        spaces
+    }
+})();
+
 const Player = (name) => {
+    let moves = [];
     let playerSymbol = '';
     let yourTurn = false;
+
+    function addToMoves(space) {
+        moves.push(parseInt(space.getAttribute('data')));
+        console.log(moves);
+    }
 
     return { 
         name,
         yourTurn, 
         playerSymbol,
+        moves,
+        addToMoves
     }
 }
 
-//const computer = (() => {
+const computer = (() => {
 
-//})
+    let firstPlayer = false;
+    const corners = [0, 2, 6, 8];
+    const sides = [1, 3, 5, 7];
+    const middle = 4;
+
+    function checkIfFirst() {
+        return playerController.whoseTurn().name === 'Computer';
+    }
+    
+    function chooseCorner() {
+        const choice = Math.floor(Math.random() * corners.length);
+        selection = corners[choice];
+        selectSpace(selection);
+    }
+
+    function gameStart() {
+        firstPlayer = checkIfFirst();
+        if (firstPlayer) {
+            chooseCorner();
+        }
+    }
+
+    function chooseMiddle() {
+        selectSpace(middle);
+    }
+
+    function sideChosen(previousMove) {
+        return sides.includes(parseInt(previousMove));
+    }
+
+    function adjCornerChosen(previousMove, activePlayer) {
+        return corners.includes(parseInt(previousMove)) && parseInt(previousMove) != Math.abs(activePlayer.moves[0] - 8);
+    }
+
+    function oppCornerChosen(previousMove, activePlayer) {
+        return parseInt(previousMove) === Math.abs(activePlayer.moves[0] - 8);
+    }
+    
+    function middleChosen(previousMove) {
+        return parseInt(previousMove) === middle;
+    }
+
+    function findAdjCorner(previousMove, activePlayer) {
+        return corners.filter(corner => corner != parseInt(previousMove) 
+        && corner != Math.abs(activePlayer.moves[0] - 8) && !activePlayer.moves.includes(corner));
+    }
+
+    function chooseAdjCorner(previousMove, activePlayer) {
+        adjCorners = findAdjCorner(previousMove, activePlayer);
+        console.log(adjCorners);
+        const choice = Math.floor(Math.random() * adjCorners.length);
+        return adjCorners[choice];
+    }
+
+    function chooseRandSpace(emptySpaces) {
+        const choice = Math.floor(Math.random() * emptySpaces.length);
+        return emptySpaces[choice];
+    }
+
+    function findOppCorner(activePlayer) {
+        return corners.find(corner => corner === Math.abs(activePlayer.moves[0] - 8));
+    }
+
+    function chooseNextMove(activePlayer, otherPlayer, spaces) {
+        spacesArr = Array.from(spaces);
+        const emptySpaces = spacesArr.filter(space => space.textContent === '');
+        const emptySpacesData = emptySpaces.map(space => parseInt(space.getAttribute('data')));
+
+        const [isWinningSpace, winningSpace] = checkForWinSpaces(activePlayer.moves, emptySpacesData);
+            
+        if (isWinningSpace) {
+            return winningSpace;
+        }
+            
+        const [isSpaceToBlock, spaceToBlock] = checkForWinSpaces(otherPlayer.moves, emptySpacesData);
+        if (isSpaceToBlock) {
+            return spaceToBlock;
+        }
+        
+        const [isSpace, spaceToChoose] = searchEmptySpaces(emptySpacesData, activePlayer.moves);
+        if (isSpace) {
+            return spaceToChoose;
+        }
+
+        else {
+            return chooseRandSpace(emptySpacesData);
+        }
+
+
+    }
+
+    function checkForWinSpaces(previousMoves, emptySpaces) {
+
+        function checkForMatches(spaces, previousMoves) {
+            return spaces.every(space => previousMoves.includes(space));
+        }
+
+        for (const space of emptySpaces) {
+            const spacesToCheck = gameboard.spaces[`${space}`];
+            if (spacesToCheck.some(spaces => checkForMatches(spaces, previousMoves))) {
+                return [true, space];
+            }
+        }
+        return [false, null];
+    }
+
+    function findEmptyAndMatch(spaces, previousMoves, emptySpaces) {
+        let match = false;
+        let empty = false;
+      
+        spaces.forEach(function(space) {
+            if (previousMoves.includes(space)) {
+                match = true;
+            } else if (emptySpaces.includes(space)) {
+                empty = true;
+            }
+        })
+        return match && empty;
+    }
+
+    `create array of functions with arguments bound, loop through searchEmptySpaces, apply different function each time`
+
+    function findMultSetups(previousMoves, emptySpaces, spacesArr) {
+        const setups = spacesArr.filter(spaces => findEmptyAndMatch(spaces, previousMoves, emptySpaces));
+        if (setups.length >= 2) {
+            return setups
+        }
+        return false;
+    }
+
+    function findOneSetup(previousMoves, emptySpaces, spacesArr) {
+        const setups = spacesArr.filter(spaces => findEmptyAndMatch(spaces, previousMoves, emptySpaces));
+        return setups;
+    }
+
+    function searchEmptySpaces(emptySpaces, previousMoves) {
+
+        let multSetups = findMultSetups.bind(null, previousMoves, emptySpaces);
+        let oneSetup = findOneSetup.bind(null, previousMoves, emptySpaces);
+
+        evalFuncs = [multSetups, oneSetup];
+
+        for (let i = 0; i < evalFuncs.length; i++) {
+            for (const space of emptySpaces) {
+                const spacesToCheck = gameboard.spaces[`${space}`];
+                if (evalFuncs[i](spacesToCheck).length > 0) {
+                    return [true, space];
+                }
+            }
+        }
+        return [false, null];
+    }
+
+    function analyzeBoard(movesMade, spaces, activePlayer) {
+        const previousMove = findPreviousMove();
+        const otherPlayer = playerController.inactivePlayer();
+
+        if (movesMade === 1) {
+            if (middleChosen(previousMove)) {
+                chooseCorner();
+            } else {
+                chooseMiddle();
+            }
+        }
+        if (movesMade === 2) {
+            if (sideChosen(previousMove)) {
+                selectSpace(middle);
+            } else if (adjCornerChosen(previousMove, activePlayer)) {
+                console.log(adjCornerChosen(previousMove, activePlayer));
+                selectSpace(chooseAdjCorner(previousMove, activePlayer));
+            } else if (oppCornerChosen(previousMove, activePlayer)) {
+                selectSpace(chooseAdjCorner(previousMove, activePlayer));
+            } else {
+                selectSpace(findOppCorner(activePlayer));
+            }
+        }
+        if (movesMade >= 3) {
+
+            const space = chooseNextMove(activePlayer, otherPlayer, spaces);
+            selectSpace(space);
+        }
+    }
+
+
+    function selectSpace(selection) {
+        space = document.querySelector(`[data="${selection}"]`);
+        space.click();
+    }
+
+    function findPreviousMove() {
+        const otherPlayer = playerController.inactivePlayer();
+        return otherPlayer.moves[otherPlayer.moves.length - 1];
+    }
+
+    return {
+        gameStart,
+        checkIfFirst,
+        analyzeBoard,
+        chooseCorner,
+    }
+
+})();
 
 const playerController = (() => {
     const players = [];
 
     function _createPlayer(selection, names) {
-        if (_computerSelected(selection)) {
+        const computerSelected = _checkComputerSelection(selection);
+        
+        if (computerSelected) {
             names[1] = 'Computer';
         }
         names.forEach(function(name) {
@@ -103,6 +334,11 @@ const playerController = (() => {
         return player;
     }
 
+    function inactivePlayer() {
+        const player = players.find(player => player.yourTurn === false);
+        return player;
+    }
+
     function changeTurn() {
         players.forEach(function(player) {
             player.yourTurn = !player.yourTurn;
@@ -131,12 +367,13 @@ const playerController = (() => {
         _startingPlayer();
     }
 
-    function _computerSelected(selection) {
+    function _checkComputerSelection(selection) {
         return selection.checked;
     }
 
     return {
         whoseTurn,
+        inactivePlayer,
         changeTurn,
         gameStart,
         removePlayers,
@@ -146,6 +383,9 @@ const playerController = (() => {
 })();
 
 const gameLogic = (() => {
+
+    let movesMade = 0;
+
     function _winCheck(spaces) {
         if (_rowWin(spaces) || _colWin(spaces) || _diagWin(spaces)) {
             return true;
@@ -203,6 +443,8 @@ const gameLogic = (() => {
         
         if (spaceIsEmpty) {
             displayController.addToBoard(space, activePlayer);
+            activePlayer.addToMoves(space);
+            movesMade += 1;
             const win = _winCheck(spaces);
             const tie = _tieCheck(spaces);
             
@@ -213,6 +455,10 @@ const gameLogic = (() => {
             } else {
                 const nextPlayer = playerController.changeTurn();
                 displayController.turnMessage(nextPlayer);
+                if (nextPlayer.name === 'Computer') {
+                    console.log('My turn!');
+                    computer.analyzeBoard(movesMade, spaces, nextPlayer);
+                }
             }
         }
     }
@@ -221,8 +467,13 @@ const gameLogic = (() => {
         return space.textContent === '';
     }
 
+    function resetMoveCounter() {
+        movesMade = 0;
+    }
+
     return {
-        gameFlow
+        gameFlow,
+        resetMoveCounter
     }
 })();
 
