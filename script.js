@@ -43,6 +43,7 @@ const eventController = (() => {
         playerController.playAgain();
         displayController.gameStart(spaces);
         gameLogic.resetMoveCounter();
+        computer.gameStart();
     })
 
     changePlayersBtn.addEventListener('click', () => {
@@ -77,7 +78,6 @@ const Player = (name) => {
 
     function addToMoves(space) {
         moves.push(parseInt(space.getAttribute('data')));
-        console.log(moves);
     }
 
     return { 
@@ -101,8 +101,7 @@ const computer = (() => {
     }
     
     function chooseCorner() {
-        const choice = Math.floor(Math.random() * corners.length);
-        selection = corners[choice];
+        selection = chooseRandSpace(corners)
         selectSpace(selection);
     }
 
@@ -121,12 +120,8 @@ const computer = (() => {
         return sides.includes(parseInt(previousMove));
     }
 
-    function adjCornerChosen(previousMove, activePlayer) {
-        return corners.includes(parseInt(previousMove)) && parseInt(previousMove) != Math.abs(activePlayer.moves[0] - 8);
-    }
-
-    function oppCornerChosen(previousMove, activePlayer) {
-        return parseInt(previousMove) === Math.abs(activePlayer.moves[0] - 8);
+    function cornerChosen(previousMove) {
+        return corners.includes(parseInt(previousMove));
     }
     
     function middleChosen(previousMove) {
@@ -140,9 +135,8 @@ const computer = (() => {
 
     function chooseAdjCorner(previousMove, activePlayer) {
         adjCorners = findAdjCorner(previousMove, activePlayer);
-        console.log(adjCorners);
-        const choice = Math.floor(Math.random() * adjCorners.length);
-        return adjCorners[choice];
+        selection = chooseRandSpace(adjCorners);
+        return selection;
     }
 
     function chooseRandSpace(emptySpaces) {
@@ -154,47 +148,26 @@ const computer = (() => {
         return corners.find(corner => corner === Math.abs(activePlayer.moves[0] - 8));
     }
 
-    function chooseNextMove(activePlayer, otherPlayer, spaces) {
+    function analyzeBoard(activePlayer, otherPlayer, spaces) {
         spacesArr = Array.from(spaces);
         const emptySpaces = spacesArr.filter(space => space.textContent === '');
         const emptySpacesData = emptySpaces.map(space => parseInt(space.getAttribute('data')));
-
-        const [isWinningSpace, winningSpace] = checkForWinSpaces(activePlayer.moves, emptySpacesData);
-            
-        if (isWinningSpace) {
-            return winningSpace;
-        }
-            
-        const [isSpaceToBlock, spaceToBlock] = checkForWinSpaces(otherPlayer.moves, emptySpacesData);
-        if (isSpaceToBlock) {
-            return spaceToBlock;
-        }
         
-        const [isSpace, spaceToChoose] = searchEmptySpaces(emptySpacesData, activePlayer.moves);
-        if (isSpace) {
+        const spaceToChoose = searchEmptySpaces(emptySpacesData, activePlayer.moves, otherPlayer.moves);
+        if (toString(spaceToChoose)) {
             return spaceToChoose;
-        }
-
-        else {
+        } else {
+            console.log('random space!');
             return chooseRandSpace(emptySpacesData);
         }
-
-
     }
 
-    function checkForWinSpaces(previousMoves, emptySpaces) {
+    function checkForWinSpaces(previousMoves, spacesToCheck) {
+        return spacesToCheck.some(spaces => checkForMatches(spaces, previousMoves));
+    }
 
-        function checkForMatches(spaces, previousMoves) {
-            return spaces.every(space => previousMoves.includes(space));
-        }
-
-        for (const space of emptySpaces) {
-            const spacesToCheck = gameboard.spaces[`${space}`];
-            if (spacesToCheck.some(spaces => checkForMatches(spaces, previousMoves))) {
-                return [true, space];
-            }
-        }
-        return [false, null];
+    function checkForMatches(spaces, previousMoves) {
+        return spaces.every(space => previousMoves.includes(space));
     }
 
     function findEmptyAndMatch(spaces, previousMoves, emptySpaces) {
@@ -211,40 +184,34 @@ const computer = (() => {
         return match && empty;
     }
 
-    `create array of functions with arguments bound, loop through searchEmptySpaces, apply different function each time`
-
     function findMultSetups(previousMoves, emptySpaces, spacesArr) {
-        const setups = spacesArr.filter(spaces => findEmptyAndMatch(spaces, previousMoves, emptySpaces));
-        if (setups.length >= 2) {
-            return setups
-        }
-        return false;
+        return spacesArr.filter(spaces => findEmptyAndMatch(spaces, previousMoves, emptySpaces)).length >= 2;
     }
 
     function findOneSetup(previousMoves, emptySpaces, spacesArr) {
-        const setups = spacesArr.filter(spaces => findEmptyAndMatch(spaces, previousMoves, emptySpaces));
-        return setups;
+        return spacesArr.some(spaces => findEmptyAndMatch(spaces, previousMoves, emptySpaces));
     }
 
-    function searchEmptySpaces(emptySpaces, previousMoves) {
+    function searchEmptySpaces(emptySpaces, myPastMoves, oppPastMoves) {
 
-        let multSetups = findMultSetups.bind(null, previousMoves, emptySpaces);
-        let oneSetup = findOneSetup.bind(null, previousMoves, emptySpaces);
+        let checkForMyWin = checkForWinSpaces.bind(null, myPastMoves);
+        let checkForOppWin = checkForWinSpaces.bind(null, oppPastMoves);
+        let multSetups = findMultSetups.bind(null, myPastMoves, emptySpaces);
+        let oneSetup = findOneSetup.bind(null, oppPastMoves, emptySpaces);
 
-        evalFuncs = [multSetups, oneSetup];
+        evalFuncs = [checkForMyWin, checkForOppWin, multSetups, oneSetup];
 
         for (let i = 0; i < evalFuncs.length; i++) {
             for (const space of emptySpaces) {
                 const spacesToCheck = gameboard.spaces[`${space}`];
-                if (evalFuncs[i](spacesToCheck).length > 0) {
-                    return [true, space];
+                if (evalFuncs[i](spacesToCheck)) {
+                    return space;
                 }
             }
-        }
-        return [false, null];
+        } return false;
     }
 
-    function analyzeBoard(movesMade, spaces, activePlayer) {
+    function chooseBestMove(movesMade, spaces, activePlayer) {
         const previousMove = findPreviousMove();
         const otherPlayer = playerController.inactivePlayer();
 
@@ -258,22 +225,17 @@ const computer = (() => {
         if (movesMade === 2) {
             if (sideChosen(previousMove)) {
                 selectSpace(middle);
-            } else if (adjCornerChosen(previousMove, activePlayer)) {
-                console.log(adjCornerChosen(previousMove, activePlayer));
-                selectSpace(chooseAdjCorner(previousMove, activePlayer));
-            } else if (oppCornerChosen(previousMove, activePlayer)) {
+            } else if (cornerChosen(previousMove)) {
                 selectSpace(chooseAdjCorner(previousMove, activePlayer));
             } else {
                 selectSpace(findOppCorner(activePlayer));
             }
         }
         if (movesMade >= 3) {
-
-            const space = chooseNextMove(activePlayer, otherPlayer, spaces);
+            const space = analyzeBoard(activePlayer, otherPlayer, spaces);
             selectSpace(space);
         }
     }
-
 
     function selectSpace(selection) {
         space = document.querySelector(`[data="${selection}"]`);
@@ -288,8 +250,9 @@ const computer = (() => {
     return {
         gameStart,
         checkIfFirst,
-        analyzeBoard,
+        chooseBestMove,
         chooseCorner,
+        checkForWinSpaces
     }
 
 })();
@@ -307,7 +270,6 @@ const playerController = (() => {
             const player = Player(`${name}`);
             _addToPlayers(player);
         })
-        console.log(players);
     }
 
     function _assignSymbol() {
@@ -346,8 +308,9 @@ const playerController = (() => {
         return whoseTurn();
     }
 
-    function _resetTurnStatus() {
+    function _resetPlayer() {
         players.forEach(function(player) {
+            player.moves.length = 0;
             player.yourTurn = false;
         })
     }
@@ -363,7 +326,7 @@ const playerController = (() => {
     }
 
     function playAgain() {
-        _resetTurnStatus();
+        _resetPlayer();
         _startingPlayer();
     }
 
@@ -386,50 +349,10 @@ const gameLogic = (() => {
 
     let movesMade = 0;
 
-    function _winCheck(spaces) {
-        if (_rowWin(spaces) || _colWin(spaces) || _diagWin(spaces)) {
-            return true;
-        }
-    }
+    function _winCheck(space, activePlayer) {
+        let spacesToCheck = gameboard.spaces[`${space.getAttribute('data')}`];
 
-    function _rowWin(spacesArr) {
-        const rowStart = [0, 3, 6];
-
-        for (const space of rowStart) {
-            if (spacesArr[space].textContent != '') {
-                if (spacesArr[space].textContent === spacesArr[space + 1].textContent && 
-                    spacesArr[space].textContent === spacesArr[space + 2].textContent) {
-                    return true;
-                }
-            }
-        }
-    }
-
-    function _colWin(spacesArr) {
-        const colStart = [0, 1, 2];
-
-        for (const space of colStart) {
-            if (spacesArr[space].textContent != '') {
-                if (spacesArr[space].textContent === spacesArr[space + 3].textContent && 
-                    spacesArr[space].textContent === spacesArr[space + 6].textContent) {
-                    return true;
-                }
-            }
-        }
-    }
-
-    function _diagWin(spacesArr) {
-        const diagMid = 4;
-
-        if (spacesArr[diagMid].textContent != '') {
-            if (spacesArr[diagMid].textContent === spacesArr[diagMid - 4].textContent && 
-                spacesArr[diagMid].textContent === spacesArr[diagMid + 4].textContent) {
-                return true;
-            } else if (spacesArr[diagMid].textContent === spacesArr[diagMid - 2].textContent && 
-                spacesArr[diagMid].textContent === spacesArr[diagMid + 2].textContent) {
-                return true;
-            }
-        }
+        return computer.checkForWinSpaces(activePlayer.moves, spacesToCheck);
     }
 
     function _tieCheck(spaces) {
@@ -445,7 +368,7 @@ const gameLogic = (() => {
             displayController.addToBoard(space, activePlayer);
             activePlayer.addToMoves(space);
             movesMade += 1;
-            const win = _winCheck(spaces);
+            const win = _winCheck(space, activePlayer);
             const tie = _tieCheck(spaces);
             
             if (win) {
@@ -457,7 +380,7 @@ const gameLogic = (() => {
                 displayController.turnMessage(nextPlayer);
                 if (nextPlayer.name === 'Computer') {
                     console.log('My turn!');
-                    computer.analyzeBoard(movesMade, spaces, nextPlayer);
+                    computer.chooseBestMove(movesMade, spaces, nextPlayer);
                 }
             }
         }
