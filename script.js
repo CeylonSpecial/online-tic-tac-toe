@@ -128,6 +128,10 @@ const computer = (() => {
         return parseInt(previousMove) === middle;
     }
 
+    function oppCornerChosen(previousMoves) {
+        return Math.abs(parseInt(previousMoves[0]) - 8) === parseInt(previousMoves[1]);
+    }
+
     function findAdjCorner(previousMove, activePlayer) {
         return corners.filter(corner => corner != parseInt(previousMove) 
         && corner != Math.abs(activePlayer.moves[0] - 8) && !activePlayer.moves.includes(corner));
@@ -154,10 +158,9 @@ const computer = (() => {
         const emptySpacesData = emptySpaces.map(space => parseInt(space.getAttribute('data')));
         
         const spaceToChoose = searchEmptySpaces(emptySpacesData, activePlayer.moves, otherPlayer.moves);
-        if (toString(spaceToChoose)) {
+        if (typeof spaceToChoose === 'number') {
             return spaceToChoose;
         } else {
-            console.log('random space!');
             return chooseRandSpace(emptySpacesData);
         }
     }
@@ -173,7 +176,7 @@ const computer = (() => {
     function findEmptyAndMatch(spaces, previousMoves, emptySpaces) {
         let match = false;
         let empty = false;
-      
+        
         spaces.forEach(function(space) {
             if (previousMoves.includes(space)) {
                 match = true;
@@ -197,7 +200,7 @@ const computer = (() => {
         let checkForMyWin = checkForWinSpaces.bind(null, myPastMoves);
         let checkForOppWin = checkForWinSpaces.bind(null, oppPastMoves);
         let multSetups = findMultSetups.bind(null, myPastMoves, emptySpaces);
-        let oneSetup = findOneSetup.bind(null, oppPastMoves, emptySpaces);
+        let oneSetup = findOneSetup.bind(null, myPastMoves, emptySpaces);
 
         evalFuncs = [checkForMyWin, checkForOppWin, multSetups, oneSetup];
 
@@ -232,7 +235,13 @@ const computer = (() => {
             }
         }
         if (movesMade >= 3) {
-            const space = analyzeBoard(activePlayer, otherPlayer, spaces);
+            let space;
+            if (activePlayer.moves.length === 1 && oppCornerChosen(otherPlayer.moves)) {
+                space = chooseRandSpace(sides);
+            }
+            else {
+                space = analyzeBoard(activePlayer, otherPlayer, spaces);
+            }
             selectSpace(space);
         }
     }
